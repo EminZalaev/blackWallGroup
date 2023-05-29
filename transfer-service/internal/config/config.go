@@ -19,7 +19,7 @@ const (
 
 	// ClientRateRps Ограничение количества запросов клиента на API
 	ClientRateRps                = "TRANSFERSERVICE_API_RPC_RATELIMIT"
-	ClientRateRPSDefault float64 = 50
+	ClientRateRPSDefault float64 = 10
 
 	// ClientRateBurst Распределение допустимых из ограничения запросов клиента на API
 	ClientRateBurst        = "TRANSFERSERVICE_API_RPC_BURST"
