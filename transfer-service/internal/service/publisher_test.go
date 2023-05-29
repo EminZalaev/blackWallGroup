@@ -3,11 +3,13 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/google/uuid"
-	"testing"
+
 	"transfer-service/internal/config"
 	"transfer-service/internal/models"
 )

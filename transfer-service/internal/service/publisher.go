@@ -2,9 +2,11 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
+
 	"transfer-service/internal/models"
 )
 

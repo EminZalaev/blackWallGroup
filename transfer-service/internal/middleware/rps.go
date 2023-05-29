@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"sync"
+
 	"github.com/spf13/viper"
 	"golang.org/x/time/rate"
-	"sync"
+
 	"transfer-service/internal/config"
 )
 

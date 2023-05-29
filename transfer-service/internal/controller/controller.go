@@ -1,10 +1,12 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/gin-gonic/gin"
+
 	"transfer-service/internal/models"
 	"transfer-service/internal/router/response"
 )
@@ -64,7 +66,7 @@ func (c TransferController) SendTransfer(ctx *gin.Context) {
 		response.ReturnError(ctx, http.StatusBadRequest, err)
 		return
 	}
-	
+
 	if c.transferRequests.Check(m.Id, m.UserId) {
 		log.Printf("error duplicate transfer id: %s and user id: %s\n, %v", m.Id, m.UserId, err)
 		response.ReturnError(ctx, http.StatusConflict, err)

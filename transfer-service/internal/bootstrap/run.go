@@ -2,14 +2,16 @@ package bootstrap
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+
 	"transfer-service/internal/config"
 	"transfer-service/internal/controller"
 	"transfer-service/internal/middleware"
