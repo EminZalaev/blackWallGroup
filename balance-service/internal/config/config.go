@@ -18,6 +18,16 @@ const (
 
 	KafkaTransferTopic        = "BALANCESERVICE_KAFKA_TOPIC"
 	KafkaTransferTopicDefault = "transfer_topic"
+
+	PostgresUser = "BALANCESERVICE_POSTGRES_USER"
+
+	PostgresPassword = "BALANCESERVICE_POSTGRES_PASSWORD"
+
+	PostgresDB = "BALANCESERVICE_POSTGRES_DB"
+
+	PostgresHost = "BALANCESERVICE_POSTGRES_HOST"
+
+	PostgresPort = "BALANCESERVICE_POSTGRES_PORT"
 )
 
 func SetDefaults() {

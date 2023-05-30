@@ -1,8 +1,9 @@
-package kafka
+package service
 
 import (
 	"balance-service/internal/config"
 	"balance-service/internal/models"
+	"balance-service/internal/store"
 	"context"
 	"encoding/json"
 	"github.com/Shopify/sarama"
@@ -22,14 +23,14 @@ func InitSubscribers() {
 	KafkaSubscriberRegistry = KafkaSubscriber{
 		Topic:         viper.GetString(config.KafkaTransferTopic),
 		ConsumerGroup: viper.GetString(config.KafkaTransferConsumerGroup),
-		Callback:      SubscribeCronResume,
+		Callback:      SubscribeTransferChan,
 	}
 }
 
 type KafkaSubscriber struct {
 	ConsumerGroup string
 	Topic         string
-	Callback      func(ctx context.Context, messages <-chan *message.Message)
+	Callback      func(ctx context.Context, store store.Store, messages <-chan *message.Message)
 	messages      <-chan *message.Message
 	subscriber    message.Subscriber
 }
@@ -61,31 +62,36 @@ func (ks *KafkaSubscriber) Close() error {
 	return ks.subscriber.Close()
 }
 
-func (ks *KafkaSubscriber) Subscribe(ctx context.Context) error {
+func (ks *KafkaSubscriber) Subscribe(ctx context.Context, store store.Store) error {
 	subMessage, err := ks.subscriber.Subscribe(ctx, ks.Topic)
 	if err != nil {
 		return err
 	}
 
 	ks.messages = subMessage
-	ks.Callback(ctx, ks.messages)
+	ks.Callback(ctx, store, ks.messages)
 
 	return nil
 }
 
-func SubscribeCronResume(ctx context.Context, messages <-chan *message.Message) {
+func SubscribeTransferChan(ctx context.Context, store store.Store, messages <-chan *message.Message) {
 	for msg := range messages {
 		log.Printf("received message: %s, payload: %s\n", msg.UUID, string(msg.Payload))
 
-		cronResumeMsg := models.TransferMessage{}
-		err := json.Unmarshal(msg.Payload, &cronResumeMsg)
+		transferMsg := models.TransferMessage{}
+		err := json.Unmarshal(msg.Payload, &transferMsg)
 		if err != nil {
 			log.Printf("error unmarshall msg from kafka: %v", msg.UUID)
 			msg.Ack()
 			continue
 		}
 
-		go handleCronResumeMsg(ctx, cronResumeMsg)
+		err = store.CreateTransfer()
+		if err != nil {
+			log.Printf("error create transfer: id=%s, msgId=%v, ", transferMsg.Id, msg.UUID)
+			msg.Ack()
+			continue
+		}
 
 		msg.Ack()
 	}

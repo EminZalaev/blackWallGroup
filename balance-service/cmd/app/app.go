@@ -1,60 +1,68 @@
 package app
 
 import (
+	"balance-service/internal/config"
+	"balance-service/internal/service"
+	"balance-service/internal/store"
+	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"log"
 	"os"
 	"os/signal"
-	"syscall"
-	"time"
 )
 
-func Run() (err error) {
-	app := gin.New()
-
-	cfg, err := internal.InitConfig()
+func Run() error {
+	// инициализируем конфиг
+	err := config.Configure()
 	if err != nil {
-		return fmt.Errorf("error init config: %w", err)
+		return err
 	}
 
-	store, err := internal.NewStorage(cfg)
+	config.LogVars(config.ApiBindAddr,
+		config.KafkaBrokers,
+		config.KafkaTransferTopic,
+		config.KafkaTransferConsumerGroup)
+
+	store, err := store.NewStorage(viper.GetString(config.PostgresUser),
+		viper.GetString(config.PostgresPassword),
+		viper.GetString(config.PostgresDB),
+		viper.GetString(config.PostgresHost),
+		viper.GetString(config.PostgresPort))
 	if err != nil {
 		return fmt.Errorf("error storage: %w", err)
 	}
+
 	defer func() {
 		if err := store.CloseDBConnection(); err != nil {
-			log.Println(err)
+			log.Println("error close db connection: ", err)
 		}
 	}()
 
-	srv := internal.NewService(store, app)
-	log.Println("server start on port:", cfg.Port)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	service.InitSubscribers()
+
+	if err = service.KafkaSubscriberRegistry.Init(); err != nil {
+		return fmt.Errorf("error kafka sub init: %w", err)
+	}
 
 	go func() {
-		ticker := time.NewTicker(1 * time.Hour)
-		for range ticker.C {
-			if err := internal.UpdateCurrency(cfg.CurrencyApiKey, store); err != nil {
-				log.Println(err)
-			}
+		if err = service.KafkaSubscriberRegistry.Subscribe(ctx, store); err != nil {
+			log.Println("error kafka subscribe: ", err)
+			return
 		}
 	}()
 
-	srv.InitRoutes()
-	go func() {
-		if err := app.Listen(":" + cfg.Port); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	<-ctx.Done()
+	stop()
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	err = service.KafkaSubscriberRegistry.Close()
+	if err != nil {
+		return err
+	}
 
-	<-signals
-	log.Println("Terminating...")
-
-	_ = srv.Stop()
-	log.Println("Terminated!")
-
-	return err
+	log.Println("Finish subscribing")
+	return nil
 }
