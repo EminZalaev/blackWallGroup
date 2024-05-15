@@ -11,5 +11,7 @@ func main() {
 	if err != nil {
 		log.Fatal("error start application: ", err)
 	}
+	log.Println("finish")
+	log.Println("adasda")
 	log.Println("asdasd")
 }
