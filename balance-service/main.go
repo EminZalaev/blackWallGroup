@@ -12,4 +12,5 @@ func main() {
 		log.Fatal("error start application: ", err)
 	}
 	log.Println("finish")
+	log.Println("adasda")
 }
